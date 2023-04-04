@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"top.moma.go.simple/mlogger"
 )
 
 const URL = "https://api.openai.com/v1/chat/completions"
@@ -16,24 +18,25 @@ const HEADER_CONTENT_TYPE_VALUE = "application/json"
 const MODEL = "gpt-3.5-turbo"
 
 func ChatApiCall(token, prompt string) (output string) {
+
 	output = "null"
 	requestBody := RequestBody{}
 	requestBody.createBody(prompt)
 	jsonData, _ := json.Marshal(&requestBody)
-	fmt.Printf("json data: %s\n", jsonData)
+	mlogger.InfoLogger.Println("json data: ", string(jsonData))
 	client := &http.Client{}
 	req, _ := http.NewRequest(METHOD, URL, bytes.NewBuffer(jsonData))
-	req.Header.Set(HEADER_AUTH, token)
+	req.Header.Set(HEADER_AUTH, "Bearer "+token)
 	req.Header.Set(HEADER_CONTENT_TYPE, HEADER_CONTENT_TYPE_VALUE)
 	response, _ := client.Do(req)
 	body, _ := io.ReadAll(response.Body)
 	if response.StatusCode != 200 {
 		errorResponse := ErrorResponse{}
 		_ = json.Unmarshal(body, &errorResponse)
-		fmt.Printf(errorResponse.Error.Message)
+		mlogger.ErrorLogger.Printf(errorResponse.Error.Message)
 		output = string(errorResponse.Error.Message)
 	} else {
-		fmt.Print(string(body))
+		mlogger.InfoLogger.Print(string(body))
 		output = string(body)
 	}
 	return output
